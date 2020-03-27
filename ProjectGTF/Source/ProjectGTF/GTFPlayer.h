@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Wall.h"
+#include "EnemyTemplate.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -13,6 +14,11 @@ UCLASS()
 class PROJECTGTF_API AGTFPlayer : public ACharacter
 {
 	GENERATED_BODY()
+
+
+public:
+	// Sets default values for this character's properties
+	AGTFPlayer();
 	/** Side view camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* SideViewCameraComponent;
@@ -23,54 +29,61 @@ class PROJECTGTF_API AGTFPlayer : public ACharacter
 
 
 	
-	// Sets default values for this character's properties
-	AGTFPlayer();
-public:
 	
 
 	//Homming Attack values
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite , Category = HomingAttack)
 	float impulsePower = 100;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, Category = HomingAttack)
 	bool isHomming = false;
 	
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, Category = State)
 	bool isInAir = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HomingAttack)
 	FVector HalfSize = FVector(10, 40, 480);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HomingAttack)
 	TArray<TEnumAsByte<EObjectTypeQuery>> objectsToHomming;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		float descendWallSpeed = -1000;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float homingImpulsePower = 200;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float TimeToFreeHoming = 2;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HomingAttack)
+	float homingImpulsePower = 400;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HomingAttack)
+	float TimeToFreeHoming = 0.4;
+	//
 	//Rolling 
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Roll)
 	UAnimMontage* RollAnim;
-
+	//
 	//Wall jump 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite, Category = WallJump)
 	bool isWallStuck = false;
 	
-	UPROPERTY(BlueprintReadWrite)
-	bool didWallJumpOnce = false;
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = WallJump)
+	float descendWallSpeed = -20000.0;
 
+	UPROPERTY(BlueprintReadWrite, Category = WallJump)
+	bool didWallJumpOnce = false;
+	//
+	//AttackCombo
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AttackCombo)
+	TArray<UAnimMontage*> AttackAnims;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AttackCombo)
+	float comboFollowupTime = 1.6f;
 
 private:
+	//General
+	bool inAnim = false;
+
 	//Movement
 	bool isTouchingGroundOnce = false;
-	UCharacterMovementComponent* CharMoveComponent;\
+	UCharacterMovementComponent* CharMoveComponent;
 
 	//Wall rebound
 	FVector wallReboundImpulse;
@@ -78,10 +91,15 @@ private:
 
 	//Homing
 	bool LockHoming = false;
-	float LockTimer = 100;
+	float LockTimer = 0;
 
-	//Rolling
-	bool isRolling = false;
+
+	//Attack Combo
+	int comboState = -1;
+	float comboFollowupTimer = 0;
+	AEnemyTemplate* target;
+
+
 protected:
 	
 	/** Called for side to side input */
@@ -97,10 +115,14 @@ protected:
 	void TouchStopped(const ETouchIndex::Type FingerIndex, const FVector Location);
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
+	
+	//Action Functions
 	void Jump();
 	void StopJumping();
 	void Roll();
-	// End of APawn interface
+	void AttackCombo();
+
+	
 	virtual void BeginPlay() override;
 
 public:	
@@ -115,10 +137,13 @@ public:
 	// Called to bind functionality to input
 
 	UFUNCTION(BlueprintCallable)
-		void HommingTick(float delta);
+	void HommingTick(float delta);
 
 	UFUNCTION()
-	void OnRollEnded(UAnimMontage* Montage, bool binterrupted);
+	void OnMontageBegin(UAnimMontage* Montage);
+	
+	UFUNCTION()
+	void OnMontageEnd(UAnimMontage* Montage, bool binterrupted);
 
 private: 
 

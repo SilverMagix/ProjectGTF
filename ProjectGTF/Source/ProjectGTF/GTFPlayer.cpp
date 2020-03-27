@@ -7,11 +7,12 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Engine.h"
-#include "EnemyTemplate.h"
+
 
 
 #define print(text) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.5, FColor::White,text)
 #define printOnce(text) if (GEngine) GEngine->AddOnScreenDebugMessage(1, 1.5, FColor::White,text)
+#define printOnce2(text) if (GEngine) GEngine->AddOnScreenDebugMessage(1, 1.5, FColor::White,text)
 
 AGTFPlayer::AGTFPlayer()
 {
@@ -57,7 +58,8 @@ AGTFPlayer::AGTFPlayer()
 void AGTFPlayer::BeginPlay() {
 	Super::BeginPlay();
 	GetCapsuleComponent()->OnComponentHit.AddDynamic(this, &AGTFPlayer::OnCompHit);
-	GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &AGTFPlayer::OnRollEnded);
+	GetMesh()->GetAnimInstance()->OnMontageStarted.AddDynamic(this, &AGTFPlayer::OnMontageBegin);
+	GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &AGTFPlayer::OnMontageEnd);
 }
 
 
@@ -70,67 +72,83 @@ void AGTFPlayer::SetupPlayerInputComponent(class UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AGTFPlayer::Jump);
 
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-	
+
 	PlayerInputComponent->BindAction("Roll", IE_Pressed, this, &AGTFPlayer::Roll);
 
+	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AGTFPlayer::AttackCombo);
+
 	PlayerInputComponent->BindAxis("MoveRight", this, &AGTFPlayer::MoveRight);
-	
+
 }
 
 void AGTFPlayer::Jump()
 {
-	isTouchingGroundOnce = true;
-	//GetMesh()->BodyInstance.bLockRotation = true;
-	if (!(CharMoveComponent->IsFalling())) {
-		isInAir = true;
-		bPressedJump = true;
-		JumpKeyHoldTime = 0.0f;
-	}
-	else {
-		if (!LockHoming) {
-			if (!isWallStuck) {
-				if (!isHomming) {
-					FHitResult HitResult;
-					FVector StartLocation = GetActorLocation();
-					FVector EndLocation = StartLocation + GetActorForwardVector() * 750;
-					FVector impulse = GetActorForwardVector() * impulsePower * 1000;
+	if (!inAnim) {
+		//GetMesh()->BodyInstance.bLockRotation = true;
+		if (!(CharMoveComponent->IsFalling())) {
+			//When ground jump
+			isTouchingGroundOnce = true;
+			isInAir = true;
+			bPressedJump = true;
+			JumpKeyHoldTime = 0.0f;
 
-					bool hit = UKismetSystemLibrary::BoxTraceSingleForObjects(this, StartLocation, EndLocation, HalfSize, FRotator(), objectsToHomming, false, TArray<AActor*>(), EDrawDebugTrace::None, HitResult, true);
-					if (hit) {
+		}
+		else {
+			if (target == nullptr) {
+				if (!LockHoming) {
+					if (!isWallStuck) {
+						if (!isHomming) {
 
-						float relativeY = HitResult.ImpactPoint.Y - GetActorLocation().Y;
-						float relativeZ = HitResult.ImpactPoint.Z - GetActorLocation().Z;
-						impulse = FVector(0, relativeY, relativeZ);
-						impulse.Normalize();
-						impulse *= (1000 * homingImpulsePower);
+							//When in the air do homing attack
+							FHitResult HitResult;
+							FVector StartLocation = GetActorLocation();
+							FVector EndLocation = StartLocation + GetActorForwardVector() * 750;
+							FVector impulse = GetActorForwardVector() * impulsePower * 1000;
+
+							bool hit = UKismetSystemLibrary::BoxTraceSingleForObjects(this, StartLocation, EndLocation, HalfSize, FRotator(), objectsToHomming, false, TArray<AActor*>(), EDrawDebugTrace::None, HitResult, true);
+							if (hit) {
+
+								float relativeY = HitResult.ImpactPoint.Y - GetActorLocation().Y;
+								float relativeZ = HitResult.ImpactPoint.Z - GetActorLocation().Z;
+								impulse = FVector(0, relativeY, relativeZ);
+								impulse.Normalize();
+								impulse *= (1000 * homingImpulsePower);
+
+							}
+							LockTimer = 0;
+							isHomming = true;
+							CharMoveComponent->StopMovementImmediately();
+							ResetAxis(4, false, 0);
+							CharMoveComponent->AddImpulse(impulse);
+							print("Homing");
+						}
+					}
+					else {
+
+						//If stuck to wall to walljump
+						ResetAxis(4, false, 0);
+						isHomming = false;
+						CharMoveComponent->StopMovementImmediately();
+						CharMoveComponent->AddImpulse(wallReboundImpulse * 12, true);
+						LockTimer = 0;
+
+
+
+						print("Rebound" + wallReboundImpulse.ToString());
+
+						isWallStuck = false;
+
 
 					}
-					LockTimer = 0;
-					isHomming = true;
-					CharMoveComponent->StopMovementImmediately();
-					ResetAxis(4, false, 0);
-					CharMoveComponent->AddImpulse(impulse);
-					print("Attacking");
 				}
 			}
 			else {
-				ResetAxis(4, false, 0);
-				isHomming = false;
-				CharMoveComponent->StopMovementImmediately();
-				CharMoveComponent->AddImpulse(wallReboundImpulse * 12, true);
-				LockTimer = 0;
-
-
-
-				print("Rebound" + wallReboundImpulse.ToString());
-
-				isWallStuck = false;
-
-
+			
+				AttackCombo();
 			}
 		}
 	}
-	
+
 
 }
 
@@ -145,33 +163,63 @@ void AGTFPlayer::StopJumping() {
 
 }
 
-void AGTFPlayer::OnRollEnded(UAnimMontage* Montage, bool binterrupted){
+void AGTFPlayer::OnMontageBegin(UAnimMontage* Montage) {
+	inAnim = true;
+	print("Playing anim");
+	comboFollowupTimer = 0;
+}
 
-	isRolling = false;
+void AGTFPlayer::OnMontageEnd(UAnimMontage* Montage, bool binterrupted) {
+	inAnim = false;
+	
+	
 
 }
 void AGTFPlayer::Roll() {
 
-	if (!isRolling && CharMoveComponent->IsWalking()) {
+	if (!inAnim && CharMoveComponent->IsWalking()) {
 		PlayAnimMontage(RollAnim);
-		isRolling = true;
+
 	}
+
+}
+
+void AGTFPlayer::AttackCombo() {
+	if (inAnim || AttackAnims.Num() < 1) {
+		print("Failed to Attack");
+		return;
+	}
+	if (comboState == AttackAnims.Num() - 1) {
+		comboState = -1;
+	}
+	comboState++;
+	PlayAnimMontage(AttackAnims[comboState]);
+	
+	//TimeStop in Air
+	if (isInAir) {
+		CharMoveComponent->StopMovementImmediately();
+		ResetAxis(0, false, 0);
+	}
+
+
+	print("Attacking with " + FString::FromInt(comboState));
+	
+
 
 }
 
 void AGTFPlayer::MoveRight(float Value)
 {
-	// add movement in that direction
-	if (!isWallStuck) {
+	if (!isWallStuck && !inAnim) {
 		if (!LockHoming) {
 			AddMovementInput(FVector(0.f, -1.f, 0.f), Value);
 			if (Value != 0) {
 				ResetAxis();
-			} 
-			
+			}
+
 		}
 	}
-	
+
 }
 
 void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -179,13 +227,16 @@ void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 	AEnemyTemplate* enemy = Cast<AEnemyTemplate>(OtherActor);
 	AWall* wall = Cast<AWall>(OtherActor);
 	if (enemy != nullptr) {
-		if (isHomming) {
-		
+		if (isHomming || LockHoming) {
+			
+			target = enemy;
+			//Enemy got hit
 			isHomming = false;
 			ResetAxis();
 			CharMoveComponent->StopMovementImmediately();
-			CharMoveComponent->AddImpulse(FVector(0, 0, 1500), true);
-			print("Homming");
+			AttackCombo();
+			print("Hit Enemy");
+			previousWall = nullptr;
 		}
 
 	}
@@ -193,15 +244,17 @@ void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 	if (wall != nullptr && wall != previousWall) {
 		if (!CharMoveComponent->IsWalking()) {
 			CharMoveComponent->StopMovementImmediately();
-			
+			//Wall got hit
 			ResetAxis(0);
 			isWallStuck = true;
+			
+			//Turn around
 			AddActorWorldRotation(FRotator(0, 180, 0));
-			wallReboundImpulse = FVector(0, FMath::Sign(GetActorLocation().Y- wall->GetActorLocation().Y)*200, 100);
+			wallReboundImpulse = FVector(0, FMath::Sign(GetActorLocation().Y - wall->GetActorLocation().Y) * 200, 100);
 			previousWall = wall;
 			print("Hit wall");
 		}
-	
+
 
 	}
 
@@ -213,26 +266,46 @@ void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 //To replace in blueprint
 void AGTFPlayer::HommingTick(float delta) {
 
-	if (LockTimer < TimeToFreeHoming) {
+
+	//Time to free fall
+	if (LockHoming && LockTimer < TimeToFreeHoming) {
 		LockTimer += delta;
-	
+
 	}
 	else {
 		LockHoming = false;
-		
+
 	}
 
-	printOnce(TEXT("Friction") + FString::SanitizeFloat(CharMoveComponent->FallingLateralFriction));
+
+	
+	if (comboState > -1) {
+		if (comboFollowupTimer < comboFollowupTime) {
+			comboFollowupTimer += delta;
+
+		}
+		else {
+			//Release from combo
+			printOnce2("Releasing from combo");
+			comboState = -1;
+			target = nullptr;
+			ResetAxis();
+		}
+	}
+
+	//printOnce(TEXT("Friction") + FString::SanitizeFloat(CharMoveComponent->FallingLateralFriction));
 
 	if (CharMoveComponent->IsWalking()) {
 		isWallStuck = false;
 		if (isTouchingGroundOnce) {
+			//Reset values when touching ground for first time
 			isHomming = false;
 			ResetAxis();
 			isInAir = true;
 			isTouchingGroundOnce = false;
-			
+			comboState = -1;
 			previousWall = nullptr;
+			
 			//print(CharMoveComponent->Velocity.ToString());
 		}
 
@@ -241,8 +314,9 @@ void AGTFPlayer::HommingTick(float delta) {
 		isTouchingGroundOnce = true;
 	}
 	if (isWallStuck) {
-		CharMoveComponent->AddForce(FVector(0,0,descendWallSpeed));
-	
+		//Falling when wall stuck
+		CharMoveComponent->AddForce(FVector(0, 0, descendWallSpeed));
+
 	}
 
 }
@@ -255,5 +329,5 @@ void AGTFPlayer::ResetAxis(float gravity, bool enableInput, float fallingLateral
 	CharMoveComponent->GravityScale = gravity;
 	LockHoming = !enableInput;
 	CharMoveComponent->FallingLateralFriction = fallingLateralFriction;
-	
+
 }
