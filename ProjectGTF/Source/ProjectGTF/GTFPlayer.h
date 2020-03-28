@@ -3,7 +3,7 @@
 #pragma once
 
 #include "Wall.h"
-#include "EnemyTemplate.h"
+#include "Enemy.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -36,7 +36,7 @@ public:
 	float impulsePower = 100;
 
 	UPROPERTY(BlueprintReadWrite, Category = HomingAttack)
-	bool isHomming = false;
+	bool isLocked = false;
 	
 	UPROPERTY(BlueprintReadWrite, Category = State)
 	bool isInAir = false;
@@ -55,10 +55,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = HomingAttack)
 	float TimeToFreeHoming = 0.4;
 	//
-	//Rolling 
+	//Grounded Dash 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GroundedDash)
+	FVector dashImpulse = FVector(0,100,0);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = GroundedDash)
+	float dashTime = 0.5f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Roll)
-	UAnimMontage* RollAnim;
 	//
 	//Wall jump 
 	UPROPERTY(BlueprintReadWrite, Category = WallJump)
@@ -76,10 +78,11 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AttackCombo)
 	float comboFollowupTime = 1.6f;
-
 private:
 	//General
 	bool inAnim = false;
+	UMaterialInstanceDynamic* matInstance; //Character Material
+	FLinearColor matOriginalColor; //Material original color
 
 	//Movement
 	bool isTouchingGroundOnce = false;
@@ -90,14 +93,18 @@ private:
 	AWall* previousWall;
 
 	//Homing
-	bool LockHoming = false;
 	float LockTimer = 0;
-
+	bool didHomingOnce = false;
 
 	//Attack Combo
 	int comboState = -1;
 	float comboFollowupTimer = 0;
-	AEnemyTemplate* target;
+	AEnemy* target;
+
+	//Grounded Dash
+	bool isDashing = false;
+	float DashTimer = 0;
+
 
 
 protected:
@@ -119,7 +126,7 @@ protected:
 	//Action Functions
 	void Jump();
 	void StopJumping();
-	void Roll();
+	void Dash();
 	void AttackCombo();
 
 	
@@ -148,6 +155,6 @@ public:
 private: 
 
 	void ResetAxis(float gravity = 4, bool enableInput = true, float fallingLateralFriction = 50);
-
+	void ReleaseCombo();
 
 };
