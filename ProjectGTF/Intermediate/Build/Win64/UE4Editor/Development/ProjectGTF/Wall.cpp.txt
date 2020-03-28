@@ -1,3 +1,0 @@
-C:\Users\ugoal\Perforce\Mecanica_Desktop\ProjectGTF\Intermediate\Build\Win64\UE4Editor\Development\ProjectGTF\Definitions.ProjectGTF.h
-C:\Users\ugoal\Perforce\Mecanica_Desktop\ProjectGTF\Source\ProjectGTF\Wall.h
-C:\Users\ugoal\Perforce\Mecanica_Desktop\ProjectGTF\Intermediate\Build\Win64\UE4Editor\Inc\ProjectGTF\Wall.generated.h
