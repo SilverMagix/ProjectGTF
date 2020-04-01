@@ -96,6 +96,17 @@ void AGTFPlayer::SetupPlayerInputComponent(class UInputComponent* PlayerInputCom
 
 void AGTFPlayer::Jump()
 {
+	if (isDashing) {
+		FVector afterDashImpulse = impulsePower;
+		afterDashImpulse.Y *= GetActorForwardVector().Y;
+		afterDashImpulse.Z += 100;
+		CharMoveComponent->StopMovementImmediately();
+		CharMoveComponent->AddImpulse(afterDashImpulse*1000);
+		print("AfterDashing with: Y:" + FString::SanitizeFloat(afterDashImpulse.Y) + " and Z:" + FString::SanitizeFloat(afterDashImpulse.Z));
+		isDashing = false;
+		ResetAxis(4, true, 0);
+		return;
+	}
 	if (!inAnim && comboState < 0) {
 		
 		if (!(CharMoveComponent->IsFalling())) {
@@ -105,6 +116,9 @@ void AGTFPlayer::Jump()
 			bPressedJump = true;
 			JumpKeyHoldTime = 0.0f;
 			ResetAxis(4, true, 0);
+		}
+		else {
+			Dash();
 		}
 		
 	}
@@ -159,8 +173,8 @@ void AGTFPlayer::Dash() {
 							FHitResult HitResult;
 							FVector StartLocation = GetActorLocation();
 							FVector EndLocation = StartLocation + GetActorForwardVector() * 750;
-							FVector impulse = GetActorForwardVector() * impulsePower * 1000;
-
+							FVector impulse = GetActorForwardVector() * impulsePower.Y * 1000;
+							impulse.Z = impulsePower.Z*1000;
 							bool hit = UKismetSystemLibrary::BoxTraceSingleForObjects(this, StartLocation, EndLocation, HalfSize, FRotator(), objectsToHomming, false, TArray<AActor*>(), EDrawDebugTrace::None, HitResult, true);
 							if (hit) {
 
@@ -172,12 +186,14 @@ void AGTFPlayer::Dash() {
 									impulse = FVector(0, relativeY, relativeZ);
 									impulse.Normalize();
 									impulse *= (1000 * homingImpulsePower);
+									impulse.Z = 0;
 								}
 							}
 							LockTimer = 0;
 							isLocked = true;
 							CharMoveComponent->StopMovementImmediately();
 							ResetAxis(4, false, 0);
+							
 							CharMoveComponent->AddImpulse(impulse);
 							didHomingOnce = true;
 							print("Homing");
@@ -400,7 +416,8 @@ void AGTFPlayer::ResetAxis(float gravity, bool enableInput, float fallingLateral
 	CharMoveComponent->GravityScale = gravity;
 	isLocked = !enableInput;
 	CharMoveComponent->FallingLateralFriction = fallingLateralFriction;
-	
+	CharMoveComponent->BrakingFrictionFactor = 40;
+
 
 }
 

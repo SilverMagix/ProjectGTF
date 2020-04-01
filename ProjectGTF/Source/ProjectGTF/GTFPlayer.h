@@ -33,7 +33,7 @@ public:
 
 	//Homming Attack values
 	UPROPERTY(EditAnywhere, BlueprintReadWrite , Category = HomingAttack)
-	float impulsePower = 100;
+	FVector impulsePower = FVector(0, 100,0);
 
 	UPROPERTY(BlueprintReadWrite, Category = HomingAttack)
 	bool isLocked = false;
