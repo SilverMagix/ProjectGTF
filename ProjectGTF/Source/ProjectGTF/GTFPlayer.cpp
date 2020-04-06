@@ -10,9 +10,7 @@
 
 
 
-#define print(text) if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 1.5, FColor::White,text)
-#define printOnce(text) if (GEngine) GEngine->AddOnScreenDebugMessage(1, 1.5, FColor::White,text)
-#define printOnce2(text) if (GEngine) GEngine->AddOnScreenDebugMessage(2, 1.5, FColor::White,text)
+#define print(text, i) if (GEngine) GEngine->AddOnScreenDebugMessage(i, 1.5, FColor::White,text)
 
 AGTFPlayer::AGTFPlayer()
 {
@@ -72,7 +70,7 @@ void AGTFPlayer::BeginPlay() {
 
 	if (matInstance != nullptr) {
 		matInstance->GetVectorParameterValue(FName("BodyColor"), matOriginalColor);
-		print("Got Mat Texture");
+		print("Got Mat Texture",-1);
 	}
 }
 
@@ -102,7 +100,7 @@ void AGTFPlayer::Jump()
 		afterDashImpulse.Z += 100;
 		CharMoveComponent->StopMovementImmediately();
 		CharMoveComponent->AddImpulse(afterDashImpulse * 1000);
-		print("AfterDashing with: Y:" + FString::SanitizeFloat(afterDashImpulse.Y) + " and Z:" + FString::SanitizeFloat(afterDashImpulse.Z));
+		print("AfterDashing with: Y:" + FString::SanitizeFloat(afterDashImpulse.Y) + " and Z:" + FString::SanitizeFloat(afterDashImpulse.Z),-1);
 		isDashing = false;
 		ResetAxis(4, true, 0);
 		return;
@@ -143,7 +141,7 @@ void AGTFPlayer::StopJumping() {
 
 void AGTFPlayer::OnMontageBegin(UAnimMontage* Montage) {
 	inAnim = true;
-	print("Playing anim");
+	print("Playing anim",-1);
 	comboFollowupTimer = 0;
 }
 
@@ -165,7 +163,7 @@ void AGTFPlayer::Dash() {
 			isDashing = true;
 			DashTimer = 0;
 			CharMoveComponent->AddImpulse(dashfinalImpulse, true);
-			print("Dashing");
+			print("Dashing",-1);
 		}
 		else {
 			if (target == nullptr) {
@@ -176,13 +174,14 @@ void AGTFPlayer::Dash() {
 							//When in the air do homing attack
 							FVector impulse = GetActorForwardVector() * impulsePower.Y * 1000;
 							impulse.Z = impulsePower.Z * 1000;
-							
+
 							if (potentialTarget != nullptr) {
 
 								float relativeY = potentialTarget->GetActorLocation().Y - GetActorLocation().Y;
 								float relativeZ = potentialTarget->GetActorLocation().Z - GetActorLocation().Z;
 								float angle = FMath::RadiansToDegrees(FMath::Atan(relativeZ / relativeY));
-								print("Angle to boost at: " + FString::SanitizeFloat(angle));
+
+								print("Angle to boost at: " + FString::SanitizeFloat(angle),-1);
 								if (FMath::Abs(angle) < 45) {
 									impulse = FVector(0, relativeY, relativeZ);
 									impulse.Normalize();
@@ -199,7 +198,7 @@ void AGTFPlayer::Dash() {
 
 							CharMoveComponent->AddImpulse(impulse);
 							didHomingOnce = true;
-							print("Homing");
+							print("Homing",-1);
 						}
 					}
 				}
@@ -214,7 +213,7 @@ void AGTFPlayer::Dash() {
 
 
 
-					print("Rebound" + wallReboundImpulse.ToString());
+					print("Rebound" + wallReboundImpulse.ToString(),-1);
 
 					isWallStuck = false;
 
@@ -234,7 +233,7 @@ void AGTFPlayer::Dash() {
 
 void AGTFPlayer::AttackCombo() {
 	if (inAnim || AttackAnims.Num() < 1) {
-		print("Failed to Attack");
+		print("Failed to Attack",-1);
 		return;
 	}
 	if (comboState == AttackAnims.Num() - 1) {
@@ -249,7 +248,7 @@ void AGTFPlayer::AttackCombo() {
 	ResetAxis(0, false, 0);
 
 
-	print("Attacking with " + FString::FromInt(comboState));
+	print("Attacking with " + FString::FromInt(comboState),-1);
 
 
 
@@ -278,19 +277,44 @@ void AGTFPlayer::MoveRight(float Value)
 
 void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	if (isInIFrames) {
+		return;
+	}
 	AEnemy* enemy = Cast<AEnemy>(OtherActor);
 	AWall* wall = Cast<AWall>(OtherActor);
 	if (enemy != nullptr) {
 		if (isLocked || isDashing) {
-			enemy->EnableTargeting(false);
+
 			target = enemy;
 			//Enemy got hit
 			isLocked = false;
 			ResetAxis();
 			CharMoveComponent->StopMovementImmediately();
 			AttackCombo();
-			print("Hit Enemy");
+			print("Hit Enemy",-1);
 			previousWall = nullptr;
+		}
+		else {
+		//Recieve Damage from Enemy
+			if (matInstance != nullptr) {
+				matInstance->SetVectorParameterValue("BodyColor", FColor::Red);
+				//printOnce2("Color normal");
+			}
+			if (potentialTarget != nullptr) {
+
+				potentialTarget->EnableTargeting(false);
+				potentialTarget = nullptr;
+
+			}
+			DisableInput(GetWorld()->GetFirstPlayerController());
+			isInIFrames = true;
+			
+			//Getting knocked back
+			CharMoveComponent->StopMovementImmediately();
+			FVector knockback = FVector(0, -GetActorForwardVector().Y * 1000, 900);
+			ResetAxis(4, true, 0);
+			CharMoveComponent->AddImpulse(knockback,true);
+			print("Knocked back with" + knockback.ToString(), -1);
 		}
 
 	}
@@ -307,7 +331,7 @@ void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 			AddActorWorldRotation(FRotator(0, 180, 0));
 			wallReboundImpulse = FVector(0, FMath::Sign(GetActorLocation().Y - wall->GetActorLocation().Y) * 200, 100);
 			previousWall = wall;
-			print("Hit wall");
+			print("Hit wall",-1);
 		}
 
 
@@ -321,7 +345,26 @@ void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 //To replace in blueprint
 void AGTFPlayer::HommingTick(float delta) {
 
+	//IFrames
+	if (isInIFrames) {
+		iFramesTimer += delta;
+		print("Is IFraming",6);
+		if(iFramesTimer > IFramesTime) {
+			isInIFrames = false;
+			iFramesTimer = 0;
+			if (matInstance != nullptr) {
+				matInstance->SetVectorParameterValue("BodyColor", matOriginalColor);
+				
+			}
+			EnableInput(GetWorld()->GetFirstPlayerController());
+			print("Stop IFraming", 6);
 
+		}
+		else {
+			return;
+		}
+	
+	}
 
 	//Attack state debug
 
@@ -341,30 +384,59 @@ void AGTFPlayer::HommingTick(float delta) {
 	//
 
 	//inAir targetting
-	if (isInAir && !didHomingOnce && !isLocked) {
+	if (isInAir && !didHomingOnce && !isLocked && (comboState < 0) && !isInIFrames) {
 		FHitResult HitResult;
 		FVector StartLocation = GetActorLocation();
 		FVector EndLocation = StartLocation + GetActorForwardVector() * 750;
-		printOnce2(StartLocation.ToString());
-		
+		//print(StartLocation.ToString());
+
 		
 
-		bool hit = UKismetSystemLibrary::BoxTraceSingleForObjects(this, StartLocation, EndLocation, HalfSize, FRotator(), objectsToHomming, false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, HitResult, true);
+		bool hit = UKismetSystemLibrary::BoxTraceSingleForObjects(this, StartLocation, EndLocation, HalfSize, FRotator::ZeroRotator, objectsToHomming, false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, HitResult, true);
 		if (hit) {
-			if (potentialTarget == nullptr) {
-				potentialTarget = Cast<AEnemy>(HitResult.Actor);
-				potentialTarget->EnableTargeting(true);
-				printOnce("Catching stuff");
-			}
-			else {
+			if (potentialTarget != nullptr) {
 				if (potentialTarget != Cast<AEnemy>(HitResult.Actor)) {
 					potentialTarget->EnableTargeting(false);
-					potentialTarget = Cast<AEnemy>(HitResult.Actor);
-					potentialTarget->EnableTargeting(true);
-					printOnce("Catching stuff");
+					print("Changing Target", -1);
 				}
 			}
-					
+
+			potentialTarget = Cast<AEnemy>(HitResult.Actor);
+			float relativeY = potentialTarget->GetActorLocation().Y - GetActorLocation().Y;
+			float relativeZ = potentialTarget->GetActorLocation().Z - GetActorLocation().Z;
+			float angle = FMath::RadiansToDegrees(FMath::Atan(relativeZ / relativeY));
+			if (FMath::Abs(angle) < 45) {
+				potentialTarget->EnableTargeting(true);
+				print("Catching stuff",2);
+			}
+			else {
+				potentialTarget->EnableTargeting(false);
+				potentialTarget = nullptr;
+				print("Not looking for targets",2);
+
+			}
+
+
+
+
+		}
+		else {
+			if (potentialTarget != nullptr) {
+				
+					potentialTarget->EnableTargeting(false);
+					potentialTarget = nullptr;
+				
+			}
+
+		}
+	}
+	else {
+		print("Not looking for targets",2);
+		if (potentialTarget != nullptr) {
+
+			potentialTarget->EnableTargeting(false);
+			potentialTarget = nullptr;
+
 		}
 	}
 
@@ -414,6 +486,7 @@ void AGTFPlayer::HommingTick(float delta) {
 			//Reset values when touching ground for first time
 			if (potentialTarget != nullptr) {
 				potentialTarget->EnableTargeting(false);
+				potentialTarget = nullptr;
 			}
 			isLocked = false;
 			ResetAxis();
@@ -456,9 +529,9 @@ void AGTFPlayer::ResetAxis(float gravity, bool enableInput, float fallingLateral
 
 void AGTFPlayer::ReleaseCombo()
 {
-	print("Releasing from combo");
+	print("Releasing from combo",-1);
 	comboState = -1;
-	
+
 	target = nullptr;
 	ResetAxis();
 

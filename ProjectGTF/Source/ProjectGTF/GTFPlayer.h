@@ -78,6 +78,11 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AttackCombo)
 	float comboFollowupTime = 1.6f;
+
+	//IFrames
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = IFrames)
+	float IFramesTime = 0.5f;
+
 private:
 	//General
 	bool inAnim = false;
@@ -95,7 +100,7 @@ private:
 	//Homing
 	float LockTimer = 0;
 	bool didHomingOnce = false;
-
+	
 	//Attack Combo
 	int comboState = -1;
 	float comboFollowupTimer = 0;
@@ -107,6 +112,12 @@ private:
 
 	//Enemy Targetting
 	AEnemy* potentialTarget;
+
+	//IFrames
+	float iFramesTimer = 0;
+	bool isInIFrames;
+
+
 
 protected:
 	
