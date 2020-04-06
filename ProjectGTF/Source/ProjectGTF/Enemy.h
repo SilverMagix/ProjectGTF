@@ -18,11 +18,24 @@ public:
 	AEnemy();
 
 
+	/*UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<AEnemy> EnemyToSpawn;*/
+
+	UPROPERTY(VisibleAnywhere)
+	float attackPower;
+
 private: 
 
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* Mesh;
+	
+	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UStaticMeshComponent* Target;
+	
+	UPROPERTY(VisibleAnywhere)
+	float HP;
 
+	
 
 protected:
 	// Called when the game starts or when spawned
@@ -34,5 +47,12 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	
+	void RecieveDamage(float damage);
+
+	void DestroyEnemy();
+
+	void EnableTargeting(bool enable);
+	//AEnemy SpawnEnemy(int life, FVector spawnLocation);
 
 };

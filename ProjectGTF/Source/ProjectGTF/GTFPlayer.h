@@ -105,7 +105,8 @@ private:
 	bool isDashing = false;
 	float DashTimer = 0;
 
-
+	//Enemy Targetting
+	AEnemy* potentialTarget;
 
 protected:
 	
