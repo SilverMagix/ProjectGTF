@@ -79,6 +79,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AttackCombo)
 	float comboFollowupTime = 1.6f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = AttackCombo)
+	float attackSpeed =1;
+
 	//IFrames
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = IFrames)
 	float IFramesTime = 0.5f;
@@ -88,6 +91,11 @@ private:
 	bool inAnim = false;
 	UMaterialInstanceDynamic* matInstance; //Character Material
 	FLinearColor matOriginalColor; //Material original color
+
+	//Player Stats
+	float attackPower = 25;
+	float defense = 50;
+	float hp = 100;
 
 	//Movement
 	bool isTouchingGroundOnce = false;

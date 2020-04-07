@@ -4,7 +4,9 @@
 #include "Enemy.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Engine.h"
 
+#define print(text, i) if (GEngine) GEngine->AddOnScreenDebugMessage(i, 1.5, FColor::White,text)
 
 // Sets default values
 AEnemy::AEnemy()
@@ -19,11 +21,11 @@ AEnemy::AEnemy()
 	//FBoxSphereBounds LocalBound = StaticMesh->GetBounds();
 	//float x = LocalBound.GetBox().GetSize().X;	
 	auto TargetTransform = FTransform(FRotator(0,90, 180),FVector(60,0,0));
-
 	Target->SetRelativeTransform(TargetTransform);
-	HP = 100;
-	attackPower = 10;
+		
 }
+
+
 
 // Called when the game starts or when spawned
 void AEnemy::BeginPlay()
@@ -47,16 +49,23 @@ void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 }
 
-void AEnemy::RecieveDamage(float damage)
+bool AEnemy::RecieveDamage(float damage)
 {
-	HP -= damage;
-	if (HP <= 0)
+	damage = damage / (defense + 1);
+	hp -= damage;
+	if (hp <= 0) {
+	
 		DestroyEnemy();
+		print("Enemy dead",-1);
+		return true;
+	}
+	print("Recieving Damage",9);
+	return false;
 }
 
 void AEnemy::DestroyEnemy()
 {
-	//AActor Char = GetWorld()->GetFirstPlayerController()->GetPawn()->GetActorLocation();
+	Destroy();
 
 }
 

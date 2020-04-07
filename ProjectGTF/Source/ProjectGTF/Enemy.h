@@ -18,37 +18,40 @@ public:
 	AEnemy();
 
 
-	/*UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AEnemy> EnemyToSpawn;*/
-
+	
+	
+	//Stats
 	UPROPERTY(VisibleAnywhere)
-	float attackPower;
+		float attackPower = 10;
+	UPROPERTY(VisibleAnywhere)
+		float defense = 0;
+	UPROPERTY(VisibleAnywhere)
+		float hp = 100;
 
-private: 
+private:
 
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	UStaticMeshComponent* Mesh;
-	
+		UStaticMeshComponent* Mesh;
+
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	UStaticMeshComponent* Target;
-	
-	UPROPERTY(VisibleAnywhere)
-	float HP;
+		UStaticMeshComponent* Target;
 
 	
+
+
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	
-	void RecieveDamage(float damage);
+
+	bool RecieveDamage(float damage);
 
 	void DestroyEnemy();
 
