@@ -254,9 +254,17 @@ void AGTFPlayer::Dash() {
 
 void AGTFPlayer::AttackCombo() {
 
+	//Verify if in Anim or no Anims loaded
+	if (inAnim || AttackAnims.Num() < 1) {
+		print("Failed to Attack", -1);
+		return;
+	}
+	bool isTargetDead = false;
+
+	//Attack calcs
 	if (IsValid(target)) {
 
-		bool isTargetDead = target->RecieveDamage(attackPower);
+		isTargetDead = target->RecieveDamage(attackPower);
 		comboNumber++;
 		score += 300;
 		isInCombo = true;
@@ -264,28 +272,33 @@ void AGTFPlayer::AttackCombo() {
 		//print("Attacking target ",10);
 		if (isTargetDead)
 		{
+			print("Target is Dead", -1);
 			score += 200;
-			ReleaseCombo();
+
 			didHomingOnce = false;
 			target = nullptr;
-
 		}
 	}
 
 
-	if (inAnim || AttackAnims.Num() < 1) {
-		print("Failed to Attack", -1);
-		return;
+	//Play Attack Anim
+	if (comboState > -1) {
+		PlayAnimMontage(AttackAnims[comboState], attackSpeed);
 	}
+
+	//Loop combo
 	if (comboState == AttackAnims.Num() - 1) {
 		comboState = -1;
 	}
-	comboState++;
-	PlayAnimMontage(AttackAnims[comboState], attackSpeed);
-
-	//Stop moving when attacking
-	CharMoveComponent->StopMovementImmediately();
-	ResetAxis(0, false, 0);
+	if (!isTargetDead) {
+		//Stop moving when attacking
+		comboState++;
+		CharMoveComponent->StopMovementImmediately();
+		ResetAxis(0, false, 0);
+	}
+	else {
+		comboState = -1;
+	}
 
 
 	//print("Attacking with " + FString::FromInt(comboState),-1);
@@ -349,7 +362,7 @@ void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 
 			//ReduceHP
 			ReceiveDamage(enemy->attackPower);
-			
+
 
 			//Change color
 			if (comboState < 0) {
@@ -403,7 +416,7 @@ void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 }
 
 //To replace in blueprint
-void AGTFPlayer::HommingTick(float delta) {
+void AGTFPlayer::Tick(float delta) {
 	if (isDead) {
 		return;
 	}
@@ -446,6 +459,7 @@ void AGTFPlayer::HommingTick(float delta) {
 	//
 
 	//inAir targetting
+
 	if (isInAir && !didHomingOnce && !isLocked && (comboState < 0) && !isInIFrames) {
 		FHitResult HitResult;
 		FVector StartLocation = GetActorLocation();
@@ -606,7 +620,7 @@ void AGTFPlayer::ReleaseCombo()
 
 	target = nullptr;
 	ResetAxis();
-	
+
 }
 
 void AGTFPlayer::ReceiveDamage(float damage)

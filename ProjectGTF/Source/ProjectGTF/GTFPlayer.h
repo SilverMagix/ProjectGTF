@@ -180,9 +180,8 @@ public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	// Called to bind functionality to input
-
-	UFUNCTION(BlueprintCallable)
-		void HommingTick(float delta);
+	UFUNCTION()
+		virtual void Tick(float delta) override;
 
 	UFUNCTION()
 		void OnMontageBegin(UAnimMontage* Montage);

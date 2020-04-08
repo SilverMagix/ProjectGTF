@@ -14,15 +14,14 @@ AEnemy::AEnemy()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Body"));
+	Collider = CreateDefaultSubobject<UBoxComponent>(TEXT("Collider"));
 	Target = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Target"));
-	RootComponent = Mesh;
-	Target->AttachToComponent(GetRootComponent(),FAttachmentTransformRules::KeepRelativeTransform);
-	UStaticMesh* StaticMesh = Mesh->GetStaticMesh();
-	//FBoxSphereBounds LocalBound = StaticMesh->GetBounds();
-	//float x = LocalBound.GetBox().GetSize().X;	
-	auto TargetTransform = FTransform(FRotator(0,90, 180),FVector(60,0,0));
-	Target->SetRelativeTransform(TargetTransform);
-		
+	
+
+	RootComponent = Collider;
+	Mesh->AttachToComponent(Collider,FAttachmentTransformRules::KeepRelativeTransform);
+	Target->AttachToComponent(Mesh,FAttachmentTransformRules::KeepRelativeTransform);
+
 }
 
 
@@ -32,7 +31,7 @@ void AEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 	Target->SetVisibility(false);
-
+	
 }
 
 // Called every frame
@@ -42,12 +41,7 @@ void AEnemy::Tick(float DeltaTime)
 
 }
 
-// Called to bind functionality to input
-void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-}
 
 bool AEnemy::RecieveDamage(float damage)
 {
