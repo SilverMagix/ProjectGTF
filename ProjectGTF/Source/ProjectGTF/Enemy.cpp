@@ -16,7 +16,7 @@ AEnemy::AEnemy()
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Body"));
 	Target = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Target"));
 	RootComponent = Mesh;
-	Target->AttachTo(GetRootComponent());
+	Target->AttachToComponent(GetRootComponent(),FAttachmentTransformRules::KeepRelativeTransform);
 	UStaticMesh* StaticMesh = Mesh->GetStaticMesh();
 	//FBoxSphereBounds LocalBound = StaticMesh->GetBounds();
 	//float x = LocalBound.GetBox().GetSize().X;	

@@ -1,7 +1,7 @@
 // Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
 
 #include "ProjectGTFGameMode.h"
-#include "ProjectGTFCharacter.h"
+#include "GTFPlayer.h"
 #include "UObject/ConstructorHelpers.h"
 
 AProjectGTFGameMode::AProjectGTFGameMode()
