@@ -107,6 +107,10 @@ void AGTFPlayer::SetupPlayerInputComponent(class UInputComponent* PlayerInputCom
 
 void AGTFPlayer::Jump()
 {
+	if (isDead) {
+		return;
+	}
+
 	if (isDashing) {
 		FVector afterDashImpulse = impulsePower;
 		afterDashImpulse.Y *= GetActorForwardVector().Y;
@@ -165,6 +169,10 @@ void AGTFPlayer::OnMontageEnd(UAnimMontage* Montage, bool binterrupted) {
 
 }
 void AGTFPlayer::Dash() {
+	if (isDead) {
+		return;
+	}
+
 	if (!inAnim || !isDashing) {
 		//GetMesh()->BodyInstance.bLockRotation = true;
 		if (!(CharMoveComponent->IsFalling()) && comboState < 0) {
@@ -249,10 +257,14 @@ void AGTFPlayer::AttackCombo() {
 	if (IsValid(target)) {
 
 		bool isTargetDead = target->RecieveDamage(attackPower);
-
+		comboNumber++;
+		score += 300;
+		isInCombo = true;
+		comboDurationTimer = 0;
 		//print("Attacking target ",10);
 		if (isTargetDead)
 		{
+			score += 200;
 			ReleaseCombo();
 			didHomingOnce = false;
 			target = nullptr;
@@ -284,6 +296,10 @@ void AGTFPlayer::AttackCombo() {
 
 void AGTFPlayer::MoveRight(float Value)
 {
+	if (isDead) {
+		return;
+	}
+
 	if (!isWallStuck && !inAnim) {
 		if (Value != 0 && comboState > -1) {
 			//Stop mid combo when moving
@@ -305,6 +321,10 @@ void AGTFPlayer::MoveRight(float Value)
 
 void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	if (isDead) {
+		return;
+	}
+
 	if (isInIFrames) {
 		return;
 	}
@@ -319,6 +339,8 @@ void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 			ResetAxis();
 			CharMoveComponent->StopMovementImmediately();
 			AttackCombo();
+
+
 			print("Hit Enemy", -1);
 			previousWall = nullptr;
 		}
@@ -327,7 +349,9 @@ void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 
 			//ReduceHP
 			ReceiveDamage(enemy->attackPower);
+			
 
+			//Change color
 			if (comboState < 0) {
 				if (matInstance != nullptr) {
 					matInstance->SetVectorParameterValue("BodyColor", FColor::Red);
@@ -339,6 +363,8 @@ void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 					potentialTarget = nullptr;
 
 				}
+
+				//Turn IFrames
 				DisableInput(GetWorld()->GetFirstPlayerController());
 				isInIFrames = true;
 
@@ -378,7 +404,9 @@ void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 
 //To replace in blueprint
 void AGTFPlayer::HommingTick(float delta) {
-
+	if (isDead) {
+		return;
+	}
 	//IFrames
 	if (isInIFrames) {
 		iFramesTimer += delta;
@@ -484,6 +512,16 @@ void AGTFPlayer::HommingTick(float delta) {
 		isLocked = false;
 
 	}
+
+	//Time to free fall
+	if (isInCombo && comboDurationTimer < comboDurationTime) {
+		comboDurationTimer += delta;
+
+	}
+	else {
+		isInCombo = false;
+		comboNumber = 0;
+	}
 	//
 	//Dash Timer
 	if (isDashing)
@@ -568,7 +606,7 @@ void AGTFPlayer::ReleaseCombo()
 
 	target = nullptr;
 	ResetAxis();
-
+	
 }
 
 void AGTFPlayer::ReceiveDamage(float damage)
@@ -585,10 +623,10 @@ void AGTFPlayer::ReceiveDamage(float damage)
 	hp -= damage;
 	if (hp <= 0) {
 		//Player dies if hp <= 0
-		DisableInput();
+		isDead = true;
 	}
 
-	
+
 }
 
 

@@ -88,6 +88,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|AttackCombo")
 		float comboFollowupTime = 1.6f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|AttackCombo")
+		float comboDurationTime = 5;
+
+		float comboDurationTimer = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category =  "Battle|AttackCombo")
 		float attackSpeed = 1;
@@ -98,9 +102,11 @@ public:
 	float attackPower = 25;
 	float defense = 0;
 	float hp = 100;
-	float comboNumber = 0;
-	float score = 0;
+	int comboNumber = 0;
+	int score = 0;
 
+
+	
 private:
 	//General
 	bool inAnim = false;
@@ -124,6 +130,8 @@ private:
 	float comboFollowupTimer = 0;
 	AEnemy* target;
 
+	bool isInCombo;
+
 	//Grounded Dash
 	bool isDashing = false;
 	float DashTimer = 0;
@@ -135,7 +143,7 @@ private:
 	float iFramesTimer = 0;
 	bool isInIFrames;
 
-
+	
 
 protected:
 
@@ -183,6 +191,7 @@ public:
 		void OnMontageEnd(UAnimMontage* Montage, bool binterrupted);
 
 private:
+
 
 	void ResetAxis(float gravity = 4, bool enableInput = true, float fallingLateralFriction = 50);
 	void ReleaseCombo();

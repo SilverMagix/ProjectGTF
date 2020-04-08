@@ -18,14 +18,14 @@ public:
 	AEnemy();
 
 
-	
-	
+
+
 	//Stats
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stats)
 		float attackPower = 10;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stats)
 		float defense = 0;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stats)
 		float hp = 100;
 
 private:
@@ -36,7 +36,7 @@ private:
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		UStaticMeshComponent* Target;
 
-	
+
 
 
 

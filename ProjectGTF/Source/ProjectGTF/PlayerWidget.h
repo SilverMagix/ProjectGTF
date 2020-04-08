@@ -23,9 +23,13 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerStats)
 		float PlayerHP;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerRef)
-		float ComboNumber;
+		FString ComboNumber;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerRef)
-		float Score;
+		FString Score;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = PlayerRef)
+		float ComboUIVisibility = 1;
+		
+
 
 private:
 	AGTFPlayer* player;
