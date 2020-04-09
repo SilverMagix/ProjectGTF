@@ -138,6 +138,7 @@ private:
 
 	//Enemy Targetting
 	AEnemy* potentialTarget;
+	
 
 	//IFrames
 	float iFramesTimer = 0;

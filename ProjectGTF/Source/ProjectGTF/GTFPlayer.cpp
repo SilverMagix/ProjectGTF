@@ -107,7 +107,7 @@ void AGTFPlayer::SetupPlayerInputComponent(class UInputComponent* PlayerInputCom
 
 void AGTFPlayer::Jump()
 {
-	if (isDead) {
+	if (isDead||isInIFrames) {
 		return;
 	}
 
@@ -164,12 +164,36 @@ void AGTFPlayer::OnMontageBegin(UAnimMontage* Montage) {
 
 void AGTFPlayer::OnMontageEnd(UAnimMontage* Montage, bool binterrupted) {
 	inAnim = false;
+	if (comboState > -1) {
+		
+		score += 300;
+		isInCombo = true;
+		comboDurationTimer = 0;
+		//print("Attacking target ",10);
+		if (target->RecieveDamage(attackPower))
+		{
+			print("Target is Dead", -1);
+			score += 200;
 
+
+		
+			
+			ReleaseCombo();
+			
+			CharMoveComponent->AddImpulse(FVector(0, 0, 1200), true);
+			didHomingOnce = false;
+			isInIFrames = true;
+			IFramesTime = 0;
+			//DisableInput(GetWorld()->GetFirstPlayerController());
+
+		}
+
+	}
 
 
 }
 void AGTFPlayer::Dash() {
-	if (isDead) {
+	if (isDead||isInIFrames) {
 		return;
 	}
 
@@ -255,50 +279,37 @@ void AGTFPlayer::Dash() {
 void AGTFPlayer::AttackCombo() {
 
 	//Verify if in Anim or no Anims loaded
-	if (inAnim || AttackAnims.Num() < 1) {
+	if (inAnim || AttackAnims.Num() < 1 ||isInIFrames) {
 		print("Failed to Attack", -1);
 		return;
-	}
-	bool isTargetDead = false;
-
-	//Attack calcs
-	if (IsValid(target)) {
-
-		isTargetDead = target->RecieveDamage(attackPower);
-		comboNumber++;
-		score += 300;
-		isInCombo = true;
-		comboDurationTimer = 0;
-		//print("Attacking target ",10);
-		if (isTargetDead)
-		{
-			print("Target is Dead", -1);
-			score += 200;
-
-			didHomingOnce = false;
-			target = nullptr;
-		}
 	}
 
 
 	//Play Attack Anim
-	if (comboState > -1) {
-		PlayAnimMontage(AttackAnims[comboState], attackSpeed);
-	}
 
-	//Loop combo
-	if (comboState == AttackAnims.Num() - 1) {
-		comboState = -1;
-	}
-	if (!isTargetDead) {
+
+	//Attack calcs
+	if (IsValid(target)) {
+
+		if (comboState == -1) {
+			comboState++;
+		}
+		PlayAnimMontage(AttackAnims[comboState], attackSpeed);
+		
+		
+
+
+		
 		//Stop moving when attacking
+		
 		comboState++;
 		CharMoveComponent->StopMovementImmediately();
 		ResetAxis(0, false, 0);
+
+		comboNumber++;
+		comboNumber %= 4;
 	}
-	else {
-		comboState = -1;
-	}
+
 
 
 	//print("Attacking with " + FString::FromInt(comboState),-1);
@@ -307,9 +318,19 @@ void AGTFPlayer::AttackCombo() {
 
 }
 
+void AGTFPlayer::ReleaseCombo()
+{
+	//print("Releasing from combo",-1);
+	comboState = -1;
+
+	target = nullptr;
+	ResetAxis();
+
+}
+
 void AGTFPlayer::MoveRight(float Value)
 {
-	if (isDead) {
+	if (isDead||isInIFrames) {
 		return;
 	}
 
@@ -378,7 +399,7 @@ void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 				}
 
 				//Turn IFrames
-				DisableInput(GetWorld()->GetFirstPlayerController());
+				//DisableInput(GetWorld()->GetFirstPlayerController());
 				isInIFrames = true;
 
 				//Getting knocked back
@@ -431,7 +452,7 @@ void AGTFPlayer::Tick(float delta) {
 				matInstance->SetVectorParameterValue("BodyColor", matOriginalColor);
 
 			}
-			EnableInput(GetWorld()->GetFirstPlayerController());
+			//EnableInput(GetWorld()->GetFirstPlayerController());
 			//print("Stop IFraming", 6);
 
 		}
@@ -613,15 +634,6 @@ void AGTFPlayer::ResetAxis(float gravity, bool enableInput, float fallingLateral
 
 }
 
-void AGTFPlayer::ReleaseCombo()
-{
-	//print("Releasing from combo",-1);
-	comboState = -1;
-
-	target = nullptr;
-	ResetAxis();
-
-}
 
 void AGTFPlayer::ReceiveDamage(float damage)
 {
