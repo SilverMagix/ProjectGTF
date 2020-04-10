@@ -23,11 +23,11 @@ public:
 
 	//Stats
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stats)
-		float attackPower = 10;
+		float AttackPower = 10;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stats)
-		float defense = 0;
+		float Defense = 0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stats)
-		float hp = 100;
+		float Hp = 100;
 
 private:
 

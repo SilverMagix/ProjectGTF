@@ -32,7 +32,7 @@ public:
 
 
 private:
-	AGTFPlayer* player;
+	AGTFPlayer* Player;
 
 public:
 

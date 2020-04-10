@@ -45,9 +45,9 @@ void AEnemy::Tick(float DeltaTime)
 
 bool AEnemy::RecieveDamage(float damage)
 {
-	damage = damage / (defense + 1);
-	hp -= damage;
-	if (hp <= 0) {
+	damage = damage / (Defense + 1);
+	Hp -= damage;
+	if (Hp <= 0) {
 	
 		DestroyEnemy();
 		print("Enemy dead",-1);

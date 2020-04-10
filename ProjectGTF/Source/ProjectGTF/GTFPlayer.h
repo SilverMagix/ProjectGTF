@@ -33,116 +33,116 @@ public:
 		TSubclassOf<class UUserWidget> UIClass;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = UI)
-		UUserWidget* playerWidget;
+		UUserWidget* PlayerWidget;
 	
 	//General values
 	
 		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = State)
-		bool isDead = false;
+		bool bIsDead = false;
 		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = State)
 		float IFramesTime = 0.5f;
 	//Homming Attack values
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Battle|HomingAttack")
-		FVector impulsePower = FVector(0, 100, 0);
+		FVector bImpulsePower = FVector(0, 100, 0);
 
 	UPROPERTY(BlueprintReadWrite, Category = "Battle|HomingAttack")
-		bool isLocked = false;
+		bool bIsLocked = false;
 
 	UPROPERTY(BlueprintReadWrite, Category = "State")
-		bool isInAir = false;
+		bool bIsInAir = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|HomingAttack")
 		FVector HalfSize = FVector(10, 40, 480);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|HomingAttack")
-		TArray<TEnumAsByte<EObjectTypeQuery>> objectsToHomming;
+		TArray<TEnumAsByte<EObjectTypeQuery>> UObjectsToHoming;
 
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category =  "Battle|HomingAttack")
-		float homingImpulsePower = 400;
+		float HomingImpulsePower = 400;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|HomingAttack")
 		float TimeToFreeHoming = 0.4;
 	//
 	//Grounded Dash 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category =  "Battle|GroundedDash")
-		FVector dashImpulse = FVector(0, 100, 0);
+		FVector DashImpulse = FVector(0, 100, 0);
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|GroundedDash")
 		float dashTime = 0.5f;
 
 	//
 	//Wall jump 
 	UPROPERTY(BlueprintReadWrite, Category = "Battle|WallJump")
-		bool isWallStuck = false;
+		bool bIsWallStuck = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category =  "Battle|WallJump")
-		float descendWallSpeed = -20000.0;
+		float DescendWallSpeed = -20000.0;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Battle|WallJump")
-		bool didWallJumpOnce = false;
+		bool bDidWallJumpOnce = false;
 	//
 	//AttackCombo
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|AttackCombo")
 		TArray<UAnimMontage*> AttackAnims;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|AttackCombo")
-		float comboFollowupTime = 1.6f;
+		float ComboFollowupTime = 1.6f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|AttackCombo")
-		float comboDurationTime = 5;
+		float ComboDurationTime = 5;
 
-		float comboDurationTimer = 0;
+		float ComboDurationTimer = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category =  "Battle|AttackCombo")
-		float attackSpeed = 1;
+		float AttackSpeed = 1;
 
 	
 
 	//Player Stats
-	float attackPower = 25;
-	float defense = 0;
-	float hp = 100;
-	int comboNumber = 0;
-	int score = 0;
+	float AttackPower = 25;
+	float Defense = 0;
+	float Hp = 100;
+	int ComboNumber = 0;
+	int Score = 0;
 
 
 	
 private:
 	//General
-	bool inAnim = false;
+	bool bIsInAnim = false;
 	UMaterialInstanceDynamic* matInstance; //Character Material
 	FLinearColor matOriginalColor; //Material original color
 
 	//Movement
-	bool isTouchingGroundOnce = false;
+	bool bIsTouchingGroundOnce = false;
 	UCharacterMovementComponent* CharMoveComponent;
 
 	//Wall rebound
-	FVector wallReboundImpulse;
-	AWall* previousWall;
+	FVector WallReboundImpulse;
+	AWall* PreviousWall;
 
 	//Homing
 	float LockTimer = 0;
-	bool didHomingOnce = false;
+	bool bDidHomingOnce = false;
 
 	//Attack Combo
-	int comboState = -1;
-	float comboFollowupTimer = 0;
-	AEnemy* target;
+	int ComboState = -1;
+	float ComboFollowupTimer = 0;
+	AEnemy* Target;
 
-	bool isInCombo;
+	bool bIsInCombo;
 
 	//Grounded Dash
-	bool isDashing = false;
+	bool bIsDashing = false;
 	float DashTimer = 0;
 
 	//Enemy Targetting
-	AEnemy* potentialTarget;
+	AEnemy* PotentialTarget;
 	
 
 	//IFrames
-	float iFramesTimer = 0;
-	bool isInIFrames;
+	float IFramesTimer = 0;
+	bool bIsInIFrames;
 
 	
 
@@ -193,7 +193,7 @@ public:
 private:
 
 
-	void ResetAxis(float gravity = 4, bool enableInput = true, float fallingLateralFriction = 50);
+	void ResetAxis(float gravity = 4, bool bEnableInput = true, float fallingLateralFriction = 50);
 	void ReleaseCombo();
 	void ReceiveDamage(float damage);
 };

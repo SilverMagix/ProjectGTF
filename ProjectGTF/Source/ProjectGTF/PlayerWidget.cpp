@@ -17,9 +17,9 @@ void UPlayerWidget::NativeConstruct()
 {
 
 
-	if (!player) {
+	if (!Player) {
 		AActor* playerActor = Cast<AGTFPlayer>(UGameplayStatics::GetActorOfClass(GetWorld(), AGTFPlayer::StaticClass()));
-		player = Cast<AGTFPlayer>(playerActor);
+		Player = Cast<AGTFPlayer>(playerActor);
 
 	}
 	UUserWidget::NativeConstruct();
@@ -29,12 +29,12 @@ void UPlayerWidget::NativeConstruct()
 void UPlayerWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 
-	if (player) {
-		PlayerHP = player->hp / 100;
+	if (Player) {
+		PlayerHP = Player->Hp / 100;
 
 		FString scoreText = "Score: ";
 		int totalScoreSize = 10;
-		FString playerScoreString = FString::FromInt(player->score);
+		FString playerScoreString = FString::FromInt(Player->Score);
 		totalScoreSize -= playerScoreString.Len();
 		while (totalScoreSize > 0) {
 
@@ -47,13 +47,13 @@ void UPlayerWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 
 		int previousScore = FCString::Atoi(*ComboNumber.RightChop(7));
-		if (previousScore != player->comboNumber && player->comboNumber > 0) {
-			ComboNumber = "Combo: " + FString::FromInt(player->comboNumber);
+		if (previousScore != Player->ComboNumber && Player->ComboNumber > 0) {
+			ComboNumber = "Combo: " + FString::FromInt(Player->ComboNumber);
 			ComboUIVisibility = 1;
 		}
 		else {
 			if (ComboUIVisibility > 0) {
-				if (player->comboDurationTimer > 2) {
+				if (Player->ComboDurationTimer > 2) {
 
 					ComboUIVisibility -= (InDeltaTime / 3);
 					print("Reducing ComboUI Visibility", -19);
