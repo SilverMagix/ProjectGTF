@@ -29,17 +29,23 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stats)
 		float Hp = 100;
 
+	//Hit Reaction
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Target)
+		FVector LocationToGo = FVector(0, 0, 0);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Target)
+		float RecoilSpeed = 10;
+
 private:
 
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		UStaticMeshComponent* Mesh;
-	
+
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		UBoxComponent* Collider;
 
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		UStaticMeshComponent* Target;
-	
+
 
 
 
@@ -54,7 +60,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 
-	bool RecieveDamage(float damage);
+	bool IsDead(float damage = 0); 
+
+	void Push(FVector impulse);
 
 	void DestroyEnemy();
 

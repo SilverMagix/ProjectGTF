@@ -61,7 +61,6 @@ void AGTFPlayer::BeginPlay() {
 	GetMesh()->GetAnimInstance()->OnMontageStarted.AddDynamic(this, &AGTFPlayer::OnMontageBegin);
 	GetMesh()->GetAnimInstance()->OnMontageEnded.AddDynamic(this, &AGTFPlayer::OnMontageEnd);
 
-
 	//Set Player UI
 	if (UIClass) {
 		if (!PlayerWidget) {
@@ -112,14 +111,14 @@ void AGTFPlayer::Jump()
 	}
 
 	if (bIsDashing) {
-		FVector afterDashImpulse = bImpulsePower;
+		FVector afterDashImpulse = NotHomingImpulsePower;
 		afterDashImpulse.Y *= GetActorForwardVector().Y;
 		afterDashImpulse.Z += 100;
 		CharMoveComponent->StopMovementImmediately();
+		ResetAxis(4, true, 0);
 		CharMoveComponent->AddImpulse(afterDashImpulse * 1000);
 		//print("AfterDashing with: Y:" + FString::SanitizeFloat(afterDashImpulse.Y) + " and Z:" + FString::SanitizeFloat(afterDashImpulse.Z),-1);
 		bIsDashing = false;
-		ResetAxis(4, true, 0);
 		return;
 	}
 	if (!bIsInAnim) {
@@ -164,26 +163,31 @@ void AGTFPlayer::OnMontageBegin(UAnimMontage* Montage) {
 
 void AGTFPlayer::OnMontageEnd(UAnimMontage* Montage, bool binterrupted) {
 	bIsInAnim = false;
+
+// Check Battle Status after each attack
 	if (ComboState > -1) {
 		
 		Score += 300;
 		bIsInCombo = true;
 		ComboDurationTimer = 0;
 		//print("Attacking target ",10);
-		if (Target->RecieveDamage(AttackPower))
+		
+		//Do damage to enemy
+		if (Target->IsDead(AttackPower))
 		{
+			//If Dead
+
 			print("Target is Dead", -1);
 			Score += 200;
 
-
-		
 			
 			ReleaseCombo();
 			
-			CharMoveComponent->AddImpulse(FVector(0, 0, 1200), true);
+			//Add small impulse towards Z up to add some momentum 
+			CharMoveComponent->AddImpulse(FVector(0, 0, 1700), true);
 			bDidHomingOnce = false;
 			bIsInIFrames = true;
-			IFramesTime = 0;
+			IFramesTimer = 0.2;
 			//DisableInput(GetWorld()->GetFirstPlayerController());
 
 		}
@@ -217,8 +221,8 @@ void AGTFPlayer::Dash() {
 					if (!bIsLocked) {
 						if (!bDidHomingOnce) {
 							//When in the air do homing attack
-							FVector impulse = GetActorForwardVector() * bImpulsePower.Y * 1000;
-							impulse.Z = bImpulsePower.Z * 1000;
+							FVector impulse = GetActorForwardVector() * NotHomingImpulsePower.Y * 1000;
+							impulse.Z = NotHomingImpulsePower.Z * 1000;
 
 							if (IsValid(PotentialTarget)) {
 
@@ -230,8 +234,8 @@ void AGTFPlayer::Dash() {
 								if (FMath::Abs(angle) < 45) {
 									impulse = FVector(0, relativeY, relativeZ);
 									impulse.Normalize();
-									impulse *= (1000 * HomingImpulsePower);
-									impulse.Z = 0;
+									impulse *= (1000 * HomingImpulsePower.Y);
+									impulse.Z = HomingImpulsePower.Z;
 								}
 								PotentialTarget->EnableTargeting(false);
 								PotentialTarget = nullptr;
@@ -290,24 +294,19 @@ void AGTFPlayer::AttackCombo() {
 
 	//Attack calcs
 	if (IsValid(Target)) {
-
+		Target->Push(GetActorForwardVector());
 		if (ComboState == -1) {
 			ComboState++;
 		}
 		PlayAnimMontage(AttackAnims[ComboState], AttackSpeed);
-		
-		
-
-
-		
 		//Stop moving when attacking
 		
 		ComboState++;
+		ComboState %= 4;
 		CharMoveComponent->StopMovementImmediately();
 		ResetAxis(0, false, 0);
 
 		ComboNumber++;
-		ComboNumber %= 4;
 	}
 
 
@@ -444,7 +443,7 @@ void AGTFPlayer::Tick(float delta) {
 	//IFrames
 	if (bIsInIFrames) {
 		IFramesTimer += delta;
-		//print("Is IFraming",6);
+		//print("Is IFraming for " + FString::SanitizeFloat(IFramesTimer),-1);
 		if (IFramesTimer > IFramesTime) {
 			bIsInIFrames = false;
 			IFramesTimer = 0;
@@ -629,7 +628,7 @@ void AGTFPlayer::ResetAxis(float gravity, bool bEnableInput, float fallingLatera
 	CharMoveComponent->GravityScale = gravity;
 	bIsLocked = !bEnableInput;
 	CharMoveComponent->FallingLateralFriction = fallingLateralFriction;
-	CharMoveComponent->BrakingFrictionFactor = 40;Hp
+	CharMoveComponent->BrakingFrictionFactor = 40;
 
 
 }

@@ -4,6 +4,7 @@
 #include "Enemy.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Math/UnrealMathUtility.h"
 #include "Engine.h"
 
 #define print(text, i) if (GEngine) GEngine->AddOnScreenDebugMessage(i, 1.5, FColor::White,text)
@@ -31,20 +32,27 @@ void AEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 	Target->SetVisibility(false);
-	
+	LocationToGo = GetActorLocation();
 }
 
 // Called every frame
 void AEnemy::Tick(float DeltaTime)
 {
+
+	if (!LocationToGo.ContainsNaN()) {
+		SetActorLocation(FMath::VInterpTo(GetActorLocation(),LocationToGo,DeltaTime,2));
+		
+	}
+
 	Super::Tick(DeltaTime);
 
 }
 
 
 
-bool AEnemy::RecieveDamage(float damage)
+bool AEnemy::IsDead(float damage)
 {
+	
 	damage = damage / (Defense + 1);
 	Hp -= damage;
 	if (Hp <= 0) {
@@ -53,8 +61,14 @@ bool AEnemy::RecieveDamage(float damage)
 		print("Enemy dead",-1);
 		return true;
 	}
-	print("Recieving Damage",9);
+	print("Enemy recieving Damage",-1);
 	return false;
+}
+
+void AEnemy::Push(FVector impulse) {
+
+	LocationToGo = GetActorLocation() + impulse * RecoilSpeed;
+
 }
 
 void AEnemy::DestroyEnemy()

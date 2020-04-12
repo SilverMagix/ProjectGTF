@@ -34,16 +34,19 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = UI)
 		UUserWidget* PlayerWidget;
-	
+
 	//General values
-	
-		UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = State)
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = State)
 		bool bIsDead = false;
-		UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = State)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = State)
 		float IFramesTime = 0.5f;
 	//Homming Attack values
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Battle|HomingAttack")
-		FVector bImpulsePower = FVector(0, 100, 0);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|HomingAttack")
+		FVector NotHomingImpulsePower = FVector(0, 400, 0);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|HomingAttack")
+		FVector HomingImpulsePower = FVector(0, 500, 0);
 
 	UPROPERTY(BlueprintReadWrite, Category = "Battle|HomingAttack")
 		bool bIsLocked = false;
@@ -59,14 +62,11 @@ public:
 
 
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category =  "Battle|HomingAttack")
-		float HomingImpulsePower = 400;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|HomingAttack")
 		float TimeToFreeHoming = 0.4;
 	//
 	//Grounded Dash 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category =  "Battle|GroundedDash")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|GroundedDash")
 		FVector DashImpulse = FVector(0, 100, 0);
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|GroundedDash")
 		float dashTime = 0.5f;
@@ -76,7 +76,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Battle|WallJump")
 		bool bIsWallStuck = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category =  "Battle|WallJump")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|WallJump")
 		float DescendWallSpeed = -20000.0;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Battle|WallJump")
@@ -91,12 +91,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|AttackCombo")
 		float ComboDurationTime = 5;
 
-		float ComboDurationTimer = 0;
+	float ComboDurationTimer = 0;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category =  "Battle|AttackCombo")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|AttackCombo")
 		float AttackSpeed = 1;
 
-	
+
 
 	//Player Stats
 	float AttackPower = 25;
@@ -106,7 +106,7 @@ public:
 	int Score = 0;
 
 
-	
+
 private:
 	//General
 	bool bIsInAnim = false;
@@ -138,13 +138,13 @@ private:
 
 	//Enemy Targetting
 	AEnemy* PotentialTarget;
-	
+
 
 	//IFrames
 	float IFramesTimer = 0;
 	bool bIsInIFrames;
 
-	
+
 
 protected:
 
