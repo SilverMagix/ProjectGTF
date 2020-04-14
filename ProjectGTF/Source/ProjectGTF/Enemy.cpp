@@ -7,21 +7,22 @@
 #include "Math/UnrealMathUtility.h"
 #include "Engine.h"
 
-#define print(text, i) if (GEngine) GEngine->AddOnScreenDebugMessage(i, 1.5, FColor::White,text)
 
 // Sets default values
 AEnemy::AEnemy()
 {
- 	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Body"));
 	Collider = CreateDefaultSubobject<UBoxComponent>(TEXT("Collider"));
 	Target = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Target"));
 	
 
+
 	RootComponent = Collider;
-	Mesh->AttachToComponent(Collider,FAttachmentTransformRules::KeepRelativeTransform);
-	Target->AttachToComponent(Mesh,FAttachmentTransformRules::KeepRelativeTransform);
+	Mesh->AttachToComponent(Collider, FAttachmentTransformRules::KeepRelativeTransform);
+	
+	Target->AttachToComponent(Mesh, FAttachmentTransformRules::KeepRelativeTransform);
 
 }
 
@@ -33,17 +34,40 @@ void AEnemy::BeginPlay()
 	Super::BeginPlay();
 	Target->SetVisibility(false);
 	LocationToGo = GetActorLocation();
+	CurrentSpeed = Speed;
 }
 
 // Called every frame
 void AEnemy::Tick(float DeltaTime)
 {
+	if (DumbTimer > 3) {
+		if (!LocationToGo.ContainsNaN()) {
+			if (bIsGettingHit) {
+				SetActorLocation(FMath::VInterpTo(GetActorLocation(), LocationToGo, DeltaTime, CurrentSpeed));
+			}
+			else {
+				SetActorLocation(FMath::VInterpConstantTo(GetActorLocation(), LocationToGo, DeltaTime, CurrentSpeed));
+			}
 
-	if (!LocationToGo.ContainsNaN()) {
-		SetActorLocation(FMath::VInterpTo(GetActorLocation(),LocationToGo,DeltaTime,2));
-		
+
+		}
 	}
 
+	if (bIsGettingHit) {
+		if (RecoilTimer < RecoilTime) {
+			RecoilTimer += DeltaTime;
+		}
+		else {
+			bIsGettingHit = false;
+			RecoilTimer = 0;
+			DumbTimer = 0;
+			print("Resetting dumb timer", -1);
+		}
+	}
+
+	if (DumbTimer < 4) {
+		DumbTimer += DeltaTime;
+	}
 	Super::Tick(DeltaTime);
 
 }
@@ -52,22 +76,25 @@ void AEnemy::Tick(float DeltaTime)
 
 bool AEnemy::IsDead(float damage)
 {
-	
+	bIsGettingHit = true;
 	damage = damage / (Defense + 1);
 	Hp -= damage;
 	if (Hp <= 0) {
-	
+
 		DestroyEnemy();
-		print("Enemy dead",-1);
+		print("Enemy dead", -1);
 		return true;
 	}
-	print("Enemy recieving Damage",-1);
+	print("Enemy recieving Damage", -1);
 	return false;
 }
 
-void AEnemy::Push(FVector impulse) {
+void AEnemy::Push(FVector playerLocation, FVector impulse) {
 
-	LocationToGo = GetActorLocation() + impulse * RecoilSpeed;
+	bIsGettingHit = true;
+	LocationToGo = (GetActorLocation() + impulse * RecoilSpeed);
+	LocationToGo.Z = playerLocation.Z;
+	CurrentSpeed = 2;
 
 }
 

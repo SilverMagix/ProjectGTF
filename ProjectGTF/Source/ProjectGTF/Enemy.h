@@ -5,7 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "Components/BoxComponent.h"
+#include "UEnemyPathFollowComp.h"
+
 #include "Enemy.generated.h"
+
+#define print(text, i) if (GEngine) GEngine->AddOnScreenDebugMessage(i, 1.5, FColor::White,text)
 
 class UStaticMeshComponent;
 
@@ -28,12 +32,16 @@ public:
 		float Defense = 0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stats)
 		float Hp = 100;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stats)
+		float Speed = 60;
 
 	//Hit Reaction
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Target)
 		FVector LocationToGo = FVector(0, 0, 0);
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Target)
-		float RecoilSpeed = 10;
+		float RecoilSpeed = 20;
+	UPROPERTY()
+		float RecoilTime = 2;
 
 private:
 
@@ -45,11 +53,17 @@ private:
 
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		UStaticMeshComponent* Target;
+	
 
 
+protected:
+	//Enemy current Stats
+	float CurrentSpeed;
+	float RecoilTimer = 0;
+	float DumbTimer = 4;
 
-
-
+	//Attack Values
+	bool bIsGettingHit;
 
 protected:
 	// Called when the game starts or when spawned
@@ -60,13 +74,16 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 
-	bool IsDead(float damage = 0); 
+	bool IsDead(float damage = 0);
 
-	void Push(FVector impulse);
+	void Push(FVector playerLocation, FVector impulse);
 
 	void DestroyEnemy();
 
 	void EnableTargeting(bool enable);
+
+	virtual void EnemyMove() PURE_VIRTUAL(AEnemy::EnemyMove(), return;);;
+
 	//AEnemy SpawnEnemy(int life, FVector spawnLocation);
 
 };

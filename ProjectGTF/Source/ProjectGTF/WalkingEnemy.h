@@ -4,14 +4,22 @@
 
 #include "CoreMinimal.h"
 #include "Enemy.h"
+#include "GTFPlayer.h"
 #include "WalkingEnemy.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class PROJECTGTF_API AWalkingEnemy : public AEnemy
 {
 	GENERATED_BODY()
-	
+
+
+
+public:
+	AWalkingEnemy() {};
+
+	void EnemyMove();
+	virtual void Tick(float DeltaTime) override;
 };

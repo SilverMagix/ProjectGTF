@@ -73,6 +73,10 @@ public:
 
 	//
 	//Wall jump 
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Battle|WallJump")
+		FVector WallReboundImpulse = FVector(0,200,200);
+	
 	UPROPERTY(BlueprintReadWrite, Category = "Battle|WallJump")
 		bool bIsWallStuck = false;
 
@@ -118,7 +122,6 @@ private:
 	UCharacterMovementComponent* CharMoveComponent;
 
 	//Wall rebound
-	FVector WallReboundImpulse;
 	AWall* PreviousWall;
 
 	//Homing

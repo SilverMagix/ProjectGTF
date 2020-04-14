@@ -106,43 +106,45 @@ void AGTFPlayer::SetupPlayerInputComponent(class UInputComponent* PlayerInputCom
 
 void AGTFPlayer::Jump()
 {
-	if (bIsDead||bIsInIFrames) {
+	if (bIsDead || bIsInIFrames||bIsInAnim) {
 		return;
 	}
 
 	if (bIsDashing) {
 		FVector afterDashImpulse = NotHomingImpulsePower;
 		afterDashImpulse.Y *= GetActorForwardVector().Y;
-		afterDashImpulse.Z += 100;
+		afterDashImpulse.Z += 150;
 		CharMoveComponent->StopMovementImmediately();
 		ResetAxis(4, true, 0);
-		CharMoveComponent->AddImpulse(afterDashImpulse * 1000);
+		CharMoveComponent->AddImpulse(afterDashImpulse * 12, true);
+		LockTimer = 0;
+		bIsLocked = true;
 		//print("AfterDashing with: Y:" + FString::SanitizeFloat(afterDashImpulse.Y) + " and Z:" + FString::SanitizeFloat(afterDashImpulse.Z),-1);
 		bIsDashing = false;
 		return;
 	}
-	if (!bIsInAnim) {
-		if (ComboState < 0) {
 
-			if (!(CharMoveComponent->IsFalling())) {
-				//When ground jump
-				bIsTouchingGroundOnce = true;
-				bIsInAir = true;
-				bPressedJump = true;
-				JumpKeyHoldTime = 0.0f;
-				ResetAxis(4, true, 0);
-				return;
-			}
+	if (ComboState < 0) {
 
+		if (!(CharMoveComponent->IsFalling())) {
+			//When ground jump
+			bIsTouchingGroundOnce = true;
+			bIsInAir = true;
+			bPressedJump = true;
+			JumpKeyHoldTime = 0.0f;
+			ResetAxis(4, true, 0);
+			return;
 		}
-
-		Dash();
-
 
 	}
 
+	Dash();
+
 
 }
+
+
+
 
 
 
@@ -164,14 +166,14 @@ void AGTFPlayer::OnMontageBegin(UAnimMontage* Montage) {
 void AGTFPlayer::OnMontageEnd(UAnimMontage* Montage, bool binterrupted) {
 	bIsInAnim = false;
 
-// Check Battle Status after each attack
+	// Check Battle Status after each attack
 	if (ComboState > -1) {
-		
+
 		Score += 300;
 		bIsInCombo = true;
 		ComboDurationTimer = 0;
 		//print("Attacking target ",10);
-		
+
 		//Do damage to enemy
 		if (Target->IsDead(AttackPower))
 		{
@@ -180,9 +182,9 @@ void AGTFPlayer::OnMontageEnd(UAnimMontage* Montage, bool binterrupted) {
 			print("Target is Dead", -1);
 			Score += 200;
 
-			
+
 			ReleaseCombo();
-			
+
 			//Add small impulse towards Z up to add some momentum 
 			CharMoveComponent->AddImpulse(FVector(0, 0, 1700), true);
 			bDidHomingOnce = false;
@@ -196,8 +198,9 @@ void AGTFPlayer::OnMontageEnd(UAnimMontage* Montage, bool binterrupted) {
 
 
 }
+
 void AGTFPlayer::Dash() {
-	if (bIsDead||bIsInIFrames) {
+	if (bIsDead || bIsInIFrames) {
 		return;
 	}
 
@@ -258,7 +261,7 @@ void AGTFPlayer::Dash() {
 
 					CharMoveComponent->StopMovementImmediately();
 					CharMoveComponent->AddImpulse(WallReboundImpulse * 12, true);
-					LockTimer = 0;
+					LockTimer = 0.2;
 
 
 
@@ -283,8 +286,8 @@ void AGTFPlayer::Dash() {
 void AGTFPlayer::AttackCombo() {
 
 	//Verify if in Anim or no Anims loaded
-	if (bIsInAnim || AttackAnims.Num() < 1 ||bIsInIFrames) {
-		print("Failed to Attack", -1);
+	if (bIsInAnim || AttackAnims.Num() < 1 || bIsInIFrames) {
+		print("Failed to Attack with" + AttackAnims.Num() + bIsInAnim + bIsInIFrames, -1);
 		return;
 	}
 
@@ -294,13 +297,13 @@ void AGTFPlayer::AttackCombo() {
 
 	//Attack calcs
 	if (IsValid(Target)) {
-		Target->Push(GetActorForwardVector());
+		Target->Push(GetActorLocation(), GetActorForwardVector());
 		if (ComboState == -1) {
 			ComboState++;
 		}
 		PlayAnimMontage(AttackAnims[ComboState], AttackSpeed);
 		//Stop moving when attacking
-		
+
 		ComboState++;
 		ComboState %= 4;
 		CharMoveComponent->StopMovementImmediately();
@@ -329,8 +332,23 @@ void AGTFPlayer::ReleaseCombo()
 
 void AGTFPlayer::MoveRight(float Value)
 {
-	if (bIsDead||bIsInIFrames) {
+	if (bIsDead || bIsInIFrames) {
 		return;
+	}
+
+	if (ComboState > -1) {
+		if (GetActorForwardVector().Y > 0) {
+			if (Value < 0) {
+				return;
+			}
+
+		}
+		else {
+			if (Value > 0) {
+				return;
+			}
+
+		}
 	}
 
 	if (!bIsWallStuck && !bIsInAnim) {
@@ -354,18 +372,15 @@ void AGTFPlayer::MoveRight(float Value)
 
 void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (bIsDead) {
+	if (bIsDead || bIsInIFrames || ComboState > -1) {
 		return;
 	}
 
-	if (bIsInIFrames) {
-		return;
-	}
 	AEnemy* enemy = Cast<AEnemy>(OtherActor);
 	AWall* wall = Cast<AWall>(OtherActor);
 	if (IsValid(enemy)) {
 		if (bIsLocked || bIsDashing) {
-
+			print("Caught Enemy", -1);
 			Target = enemy;
 			//Enemy got hit
 			bIsLocked = false;
@@ -422,7 +437,8 @@ void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 			bDidHomingOnce = false;
 			//Turn around
 			AddActorWorldRotation(FRotator(0, 180, 0));
-			WallReboundImpulse = FVector(0, FMath::Sign(GetActorLocation().Y - wall->GetActorLocation().Y) * 200, 100);
+			WallReboundImpulse.Y = FMath::Abs(WallReboundImpulse.Y);
+			WallReboundImpulse.Y *= GetActorForwardVector().Y;
 			PreviousWall = wall;
 			print("Hit wall", -1);
 		}
