@@ -8,6 +8,7 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Blueprint/UserWidget.h"
+#include "PlayerWidget.h"
 #include "GTFPlayer.generated.h"
 
 
@@ -33,7 +34,7 @@ public:
 		TSubclassOf<class UUserWidget> UIClass;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = UI)
-		UUserWidget* PlayerWidget;
+		UPlayerWidget* PlayerWidget;
 
 	//General values
 
@@ -59,7 +60,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|HomingAttack")
 		TArray<TEnumAsByte<EObjectTypeQuery>> UObjectsToHoming;
-
+	
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|HomingAttack")
@@ -74,6 +75,9 @@ public:
 	//
 	//Wall jump 
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|HomingAttack")
+		TArray<TEnumAsByte<EObjectTypeQuery>> WallRef;
+	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category = "Battle|WallJump")
 		FVector WallReboundImpulse = FVector(0,200,200);
 	
@@ -95,11 +99,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|AttackCombo")
 		float ComboDurationTime = 5;
 
-	float ComboDurationTimer = 0;
+		float ComboDurationTimer = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Battle|AttackCombo")
 		float AttackSpeed = 1;
 
+		bool bIsAttacking = false;
 
 
 	//Player Stats
@@ -133,7 +138,7 @@ private:
 	float ComboFollowupTimer = 0;
 	AEnemy* Target;
 
-	bool bIsInCombo;
+	bool bIsInCombo = false;
 
 	//Grounded Dash
 	bool bIsDashing = false;

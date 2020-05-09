@@ -41,9 +41,9 @@ AGTFPlayer::AGTFPlayer()
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Face in the direction we are moving..
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f); // ...at this rotation rate
-	GetCharacterMovement()->GravityScale = 2.f;
-	GetCharacterMovement()->AirControl = 0.80f;
-	GetCharacterMovement()->JumpZVelocity = 1000.f;
+	GetCharacterMovement()->GravityScale = 4.f;
+	GetCharacterMovement()->AirControl = 0.01f;
+	GetCharacterMovement()->JumpZVelocity = 2000.0f;
 	GetCharacterMovement()->GroundFriction = 3.f;
 	GetCharacterMovement()->MaxWalkSpeed = 600.f;
 	GetCharacterMovement()->MaxFlySpeed = 600.f;
@@ -64,7 +64,7 @@ void AGTFPlayer::BeginPlay() {
 	//Set Player UI
 	if (UIClass) {
 		if (!PlayerWidget) {
-			PlayerWidget = CreateWidget<UUserWidget>(GetWorld()->GetFirstPlayerController(), UIClass, FName("PlayerUI"));
+			PlayerWidget = CreateWidget<UPlayerWidget>(GetWorld()->GetFirstPlayerController(), UIClass, FName("PlayerUI"));
 			if (!PlayerWidget) {
 				//print("Error with Widget", -1);
 
@@ -168,7 +168,6 @@ void AGTFPlayer::OnMontageEnd(UAnimMontage* Montage, bool binterrupted) {
 
 	// Check Battle Status after each attack
 	if (ComboState > -1) {
-
 		Score += 300;
 		bIsInCombo = true;
 		ComboDurationTimer = 0;
@@ -287,7 +286,7 @@ void AGTFPlayer::AttackCombo() {
 
 	//Verify if in Anim or no Anims loaded
 	if (bIsInAnim || AttackAnims.Num() < 1 || bIsInIFrames) {
-		print("Failed to Attack with" + AttackAnims.Num() + bIsInAnim + bIsInIFrames, -1);
+		//print("Failed to Attack with" + AttackAnims.Num() + bIsInAnim + bIsInIFrames, -1);
 		return;
 	}
 
@@ -308,8 +307,11 @@ void AGTFPlayer::AttackCombo() {
 		ComboState %= 4;
 		CharMoveComponent->StopMovementImmediately();
 		ResetAxis(0, false, 0);
-
+		//print("Doing combo number " + FString::FromInt(ComboNumber),-1);
 		ComboNumber++;
+		
+		PlayerWidget->ActivateCombo(ComboNumber);
+
 	}
 
 
@@ -418,31 +420,39 @@ void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 
 				//Getting knocked back
 				CharMoveComponent->StopMovementImmediately();
-				FVector knockback = FVector(0, -GetActorForwardVector().Y * 1000, 900);
+				float normalizedY = FMath::Sign(GetActorLocation().Y - enemy->GetActorLocation().Y);
+				FVector knockback = FVector(0, normalizedY * 1000, 900);
 				ResetAxis(4, true, 0);
 				CharMoveComponent->AddImpulse(knockback, true);
-				//print("Knocked back with" + knockback.ToString(), -1);
+				print("Knocked back with" + knockback.ToString(), -1);
 			}
 		}
 
 	}
 
 	if (IsValid(wall) && wall != PreviousWall) {
-		if (!CharMoveComponent->IsWalking()) {
-			CharMoveComponent->StopMovementImmediately();
-			//Wall got hit
-			ResetAxis(0);
-			bIsWallStuck = true;
-			bIsLocked = false;
-			bDidHomingOnce = false;
-			//Turn around
-			AddActorWorldRotation(FRotator(0, 180, 0));
-			WallReboundImpulse.Y = FMath::Abs(WallReboundImpulse.Y);
-			WallReboundImpulse.Y *= GetActorForwardVector().Y;
-			PreviousWall = wall;
-			print("Hit wall", -1);
-		}
 
+		FVector StartLocation = GetActorLocation();
+		FVector EndLocation = StartLocation + FVector(0, 0, 200);
+		FHitResult wallHitResult;
+		//Casting line to see if it hits top wall
+		bool hit = UKismetSystemLibrary::LineTraceSingleForObjects(this, StartLocation, EndLocation, UObjectsToHoming, false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, wallHitResult, true);
+		if (!hit) {
+			if (!CharMoveComponent->IsWalking()) {
+				CharMoveComponent->StopMovementImmediately();
+				//Wall got hit
+				ResetAxis(0);
+				bIsWallStuck = true;
+				bIsLocked = false;
+				bDidHomingOnce = false;
+				//Turn around
+				AddActorWorldRotation(FRotator(0, 180, 0));
+				WallReboundImpulse.Y = FMath::Abs(WallReboundImpulse.Y);
+				WallReboundImpulse.Y *= GetActorForwardVector().Y;
+				PreviousWall = wall;
+				print("Hit wall", -1);
+			}
+		}
 
 	}
 
@@ -453,6 +463,7 @@ void AGTFPlayer::OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPr
 
 //To replace in blueprint
 void AGTFPlayer::Tick(float delta) {
+	Super::Tick(delta);
 	if (bIsDead) {
 		return;
 	}
@@ -480,13 +491,15 @@ void AGTFPlayer::Tick(float delta) {
 	//Attack state debug
 
 	if (bIsLocked || bIsDashing || (ComboState > -1)) {
-
+		bIsAttacking = true;
 		if (matInstance != nullptr) {
 			matInstance->SetVectorParameterValue("BodyColor", FLinearColor(FColor::Blue));
 			//printOnce2("Color Blue");
 		}
 	}
 	else {
+		bIsAttacking = false;
+
 		if (matInstance != nullptr) {
 			matInstance->SetVectorParameterValue("BodyColor", matOriginalColor);
 			//printOnce2("Color normal");
@@ -495,13 +508,13 @@ void AGTFPlayer::Tick(float delta) {
 	//
 
 	//inAir targetting
+	
+		
 
 	if (bIsInAir && !bDidHomingOnce && !bIsLocked && (ComboState < 0) && !bIsInIFrames) {
 		FHitResult HitResult;
 		FVector StartLocation = GetActorLocation();
 		FVector EndLocation = StartLocation + GetActorForwardVector() * 750;
-		//print(StartLocation.ToString());
-
 
 
 		bool hit = UKismetSystemLibrary::BoxTraceSingleForObjects(this, StartLocation, EndLocation, HalfSize, FRotator::ZeroRotator, UObjectsToHoming, false, TArray<AActor*>(), EDrawDebugTrace::None, HitResult, true);
@@ -513,13 +526,15 @@ void AGTFPlayer::Tick(float delta) {
 				}
 			}
 
+		//print("Trying to catch " + msg,-1);
 			PotentialTarget = Cast<AEnemy>(HitResult.Actor);
+
 			float relativeY = PotentialTarget->GetActorLocation().Y - GetActorLocation().Y;
 			float relativeZ = PotentialTarget->GetActorLocation().Z - GetActorLocation().Z;
 			float angle = FMath::RadiansToDegrees(FMath::Atan(relativeZ / relativeY));
 			if (FMath::Abs(angle) < 45) {
 				PotentialTarget->EnableTargeting(true);
-				//print("Catching stuff",2);
+				//print("Catching stuff",12);
 			}
 			else {
 				PotentialTarget->EnableTargeting(false);
@@ -564,13 +579,16 @@ void AGTFPlayer::Tick(float delta) {
 	}
 
 	//Time to free fall
-	if (bIsInCombo && ComboDurationTimer < ComboDurationTime) {
-		ComboDurationTimer += delta;
+	if (bIsInCombo) {
+		if (ComboDurationTimer < ComboDurationTime) {
+			ComboDurationTimer += delta;
 
-	}
-	else {
-		bIsInCombo = false;
-		ComboNumber = 0;
+		}
+		else {
+			bIsInCombo = false;
+			ComboNumber = 0;
+			//print("Resetting Combo Number", -1);
+		}
 	}
 	//
 	//Dash Timer
@@ -600,7 +618,7 @@ void AGTFPlayer::Tick(float delta) {
 		}
 	}
 	//
-
+	
 	//Touching ground
 	if (CharMoveComponent->IsWalking()) {
 		bIsWallStuck = false;
@@ -633,6 +651,23 @@ void AGTFPlayer::Tick(float delta) {
 		//Falling when wall stuck
 		CharMoveComponent->AddForce(FVector(0, 0, DescendWallSpeed));
 
+		FVector StartLocation = GetActorLocation();
+
+		FVector EndLocation = StartLocation + FVector(0, 50, 0);
+		StartLocation -= FVector(0, 50, 0);
+		FHitResult wallHitResult;
+
+		//Checking if still hitting a wall
+		bool hit = UKismetSystemLibrary::LineTraceSingleForObjects(this, StartLocation, EndLocation, WallRef, false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, wallHitResult, true);
+		
+		if (!hit) {
+		
+			print("Falling off",-1);
+			ResetAxis();
+			bIsWallStuck = false;
+			PreviousWall = nullptr;
+
+		}
 	}
 
 }

@@ -11,7 +11,7 @@ UCLASS()
 class PROJECTGTF_API AEnemyManager : public AActor
 {
 	GENERATED_BODY()
-	
+	///WIP
 public:	
 	// Sets default values for this actor's properties
 	AEnemyManager();

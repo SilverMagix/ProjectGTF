@@ -5,7 +5,10 @@
 #include "CoreMinimal.h"
 #include "Enemy.h"
 #include "GTFPlayer.h"
+#include "EnemyController.h"
 #include "WalkingEnemy.generated.h"
+
+#define print(text, i) if (GEngine) GEngine->AddOnScreenDebugMessage(i, 1.5, FColor::White,text)
 
 /**
  *
@@ -15,11 +18,14 @@ class PROJECTGTF_API AWalkingEnemy : public AEnemy
 {
 	GENERATED_BODY()
 
+private:
 
+	AEnemyController* Controller;
 
 public:
-	AWalkingEnemy() {};
+	AWalkingEnemy(const FObjectInitializer& ObjectInitializer) :Super(ObjectInitializer) {};
 
-	void EnemyMove();
+
+	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 };

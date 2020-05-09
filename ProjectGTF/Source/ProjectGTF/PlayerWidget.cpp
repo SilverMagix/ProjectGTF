@@ -2,6 +2,7 @@
 
 
 #include "PlayerWidget.h"
+#include "GTFPlayer.h"
 #include "Engine.h"
 
 
@@ -46,23 +47,26 @@ void UPlayerWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		Score = scoreText + playerScoreString;
 
 
-		int previousScore = FCString::Atoi(*ComboNumber.RightChop(7));
-		if (previousScore != Player->ComboNumber && Player->ComboNumber > 0) {
-			ComboNumber = "Combo: " + FString::FromInt(Player->ComboNumber);
-			ComboUIVisibility = 1;
-		}
-		else {
-			if (ComboUIVisibility > 0) {
-				if (Player->ComboDurationTimer > 2) {
+		
 
-					ComboUIVisibility -= (InDeltaTime / 3);
-					print("Reducing ComboUI Visibility", -19);
+		if (ComboUIVisibility > 0) {
+			if (Player->ComboDurationTimer > 2) {
 
-				}
+				ComboUIVisibility -= (InDeltaTime / 3);
+				print("Reducing ComboUI Visibility", -19);
+				return;
 			}
 		}
+
 	}
 
-UUserWidget::NativeTick(MyGeometry, InDeltaTime);
+	UUserWidget::NativeTick(MyGeometry, InDeltaTime);
+
+}
+
+void UPlayerWidget::ActivateCombo(int ComboNum)
+{
+	ComboNumber = "Combo: " + FString::FromInt(ComboNum);
+	ComboUIVisibility = 1;
 
 }

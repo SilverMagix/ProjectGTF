@@ -4,11 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "GTFPlayer.h"
 #include "PlayerWidget.generated.h"
 /**
  *
  */
+class AGTFPlayer;
+
+
 UCLASS()
 class PROJECTGTF_API UPlayerWidget : public UUserWidget
 {
@@ -32,7 +34,9 @@ public:
 
 
 private:
+
 	AGTFPlayer* Player;
+	
 
 public:
 
@@ -40,4 +44,5 @@ public:
 
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
+	void ActivateCombo(int ComboNum);
 };

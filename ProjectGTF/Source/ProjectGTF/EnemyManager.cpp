@@ -6,6 +6,8 @@
 
 #define print(text, i) if (GEngine) GEngine->AddOnScreenDebugMessage(i, 1.5, FColor::White,text)
 
+
+///WIP
 // Sets default values
 AEnemyManager::AEnemyManager()
 {

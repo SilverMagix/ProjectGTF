@@ -6,12 +6,13 @@
 #include "GameFramework/Pawn.h"
 #include "Components/BoxComponent.h"
 #include "UEnemyPathFollowComp.h"
-
+#include "Engine.h"
 #include "Enemy.generated.h"
 
 #define print(text, i) if (GEngine) GEngine->AddOnScreenDebugMessage(i, 1.5, FColor::White,text)
 
 class UStaticMeshComponent;
+class AGTFPlayer;
 
 UCLASS()
 class PROJECTGTF_API AEnemy : public APawn
@@ -20,10 +21,7 @@ class PROJECTGTF_API AEnemy : public APawn
 
 public:
 	// Sets default values for this pawn's properties
-	AEnemy();
-
-
-
+	AEnemy(const FObjectInitializer& ObjectInitializer);
 
 	//Stats
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Stats)
@@ -43,7 +41,12 @@ public:
 	UPROPERTY()
 		float RecoilTime = 2;
 
-private:
+
+
+
+
+protected:
+
 
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		UStaticMeshComponent* Mesh;
@@ -54,16 +57,17 @@ private:
 	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 		UStaticMeshComponent* Target;
 	
+	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+		UFloatingPawnMovement* MovComp;
 
-
-protected:
 	//Enemy current Stats
 	float CurrentSpeed;
 	float RecoilTimer = 0;
 	float DumbTimer = 4;
-
-	//Attack Values
-	bool bIsGettingHit;
+	bool bIsDead= false;
+	//Attack State Values
+	bool bIsGettingHit = false;
+	AGTFPlayer* Player;
 
 protected:
 	// Called when the game starts or when spawned
